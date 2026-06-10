@@ -6,12 +6,24 @@
 namespace yaclib {
 namespace detail {
 
-template <typename V, typename E>
-class ReadyCore : public UniqueCore<V, E> {
+template <typename V, typename T>
+class ReadyCore : public UniqueCore<V, T> {
  public:
+  using Result = typename UniqueCore<V, T>::Result;
+
   template <typename... Args>
-  ReadyCore(Args&&... args) noexcept(std::is_nothrow_constructible_v<Result<V, E>, Args&&...>) {
-    this->Store(std::forward<Args>(args)...);
+  explicit ReadyCore(std::in_place_t, Args&&... args) {
+    // Body level try is required: in a constructor function try block the handler runs
+    // after the base is already destroyed and always rethrows at the end
+    try {
+      if constexpr (sizeof...(Args) == 0) {
+        this->Store(Unit{});
+      } else {
+        this->Store(std::forward<Args>(args)...);
+      }
+    } catch (...) {
+      this->Store(std::current_exception());
+    }
   }
 
   void Call() noexcept final {
@@ -19,7 +31,7 @@ class ReadyCore : public UniqueCore<V, E> {
   }
 
   void Drop() noexcept final {
-    this->_result.~Result<V, E>();
+    this->_result.~Result();
     this->Store(StopTag{});
     Call();
   }
@@ -39,18 +51,19 @@ class ReadyCore : public UniqueCore<V, E> {
 /**
  * TODO(MBkkt) add description
  */
-template <typename V = Unit, typename E = StopError, typename... Args>
+template <typename V = Unit, typename T = DefaultTrait, typename... Args>
 /*Task*/ auto MakeTask(Args&&... args) {
   if constexpr (sizeof...(Args) == 0) {
-    using T = std::conditional_t<std::is_same_v<V, Unit>, void, V>;
-    return Task{detail::UniqueCorePtr<T, E>{MakeUnique<detail::ReadyCore<T, E>>(std::in_place)}};
+    using Value = std::conditional_t<std::is_same_v<V, Unit>, void, V>;
+    return Task{detail::UniqueCorePtr<Value, T>{MakeUnique<detail::ReadyCore<Value, T>>(std::in_place)}};
   } else if constexpr (std::is_same_v<V, Unit>) {
-    using T0 = std::decay_t<head_t<Args&&...>>;
-    using T = std::conditional_t<std::is_same_v<T0, Unit>, void, T0>;
-    return Task{
-      detail::UniqueCorePtr<T, E>{MakeUnique<detail::ReadyCore<T, E>>(std::in_place, std::forward<Args>(args)...)}};
+    using Head = std::decay_t<head_t<Args&&...>>;
+    using Value = std::conditional_t<std::is_same_v<Head, Unit>, void, Head>;
+    return Task{detail::UniqueCorePtr<Value, T>{
+      MakeUnique<detail::ReadyCore<Value, T>>(std::in_place, std::forward<Args>(args)...)}};
   } else {
-    return Task{detail::UniqueCorePtr<V, E>{MakeUnique<detail::ReadyCore<V, E>>(std::forward<Args>(args)...)}};
+    return Task{
+      detail::UniqueCorePtr<V, T>{MakeUnique<detail::ReadyCore<V, T>>(std::in_place, std::forward<Args>(args)...)}};
   }
 }
 

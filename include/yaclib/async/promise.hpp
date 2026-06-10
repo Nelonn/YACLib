@@ -6,11 +6,11 @@
 
 namespace yaclib {
 
-template <typename V, typename E>
+template <typename V, typename T>
 class Promise final {
   static_assert(Check<V>(), "V should be valid");
-  static_assert(Check<E>(), "E should be valid");
-  static_assert(!std::is_same_v<V, E>, "Promise cannot be instantiated with same V and E, because it's ambiguous");
+  static_assert(!std::is_same_v<V, typename T::Error>,
+                "V cannot be the same as the trait Error type, because callback dispatch would be ambiguous");
 
  public:
   Promise(const Promise& other) = delete;
@@ -47,14 +47,14 @@ class Promise final {
   /**
    * Set \ref Promise result
    *
-   * \tparam Args \ref Result<T> should be constructable from this types
+   * \tparam Args \ref T::MakeResult<V> should be invocable with this types
    * \param args arguments
    */
   template <typename... Args>
   void Set(Args&&... args) && {
     YACLIB_ASSERT(Valid());
     if constexpr (sizeof...(Args) == 0) {
-      _core->Store(std::in_place);
+      _core->Store(Unit{});
     } else {
       _core->Store(std::forward<Args>(args)...);
     }
@@ -65,15 +65,15 @@ class Promise final {
   /**
    * Part of unsafe but internal API
    */
-  explicit Promise(detail::UniqueCorePtr<V, E> core) noexcept : _core{std::move(core)} {
+  explicit Promise(detail::UniqueCorePtr<V, T> core) noexcept : _core{std::move(core)} {
   }
 
-  [[nodiscard]] detail::UniqueCorePtr<V, E>& GetCore() noexcept {
+  [[nodiscard]] detail::UniqueCorePtr<V, T>& GetCore() noexcept {
     return _core;
   }
 
  private:
-  detail::UniqueCorePtr<V, E> _core;
+  detail::UniqueCorePtr<V, T> _core;
 };
 
 extern template class Promise<>;

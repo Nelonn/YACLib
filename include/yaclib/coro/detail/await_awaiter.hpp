@@ -37,9 +37,9 @@ struct [[nodiscard]] TransferAwaiter final {
   UniqueHandle _caller;
 };
 
-template <typename V, typename E>
+template <typename V, typename T>
 struct [[nodiscard]] TransferSingleAwaiter final {
-  explicit TransferSingleAwaiter(UniqueCorePtr<V, E>&& result) noexcept : _result{std::move(result)} {
+  explicit TransferSingleAwaiter(UniqueCorePtr<V, T>&& result) noexcept : _result{std::move(result)} {
     YACLIB_ASSERT(_result != nullptr);
     YACLIB_ASSERT(_result->Empty());
   }
@@ -60,11 +60,11 @@ struct [[nodiscard]] TransferSingleAwaiter final {
   }
 
   auto await_resume() {
-    return std::move(_result->Get()).Ok();
+    return T::Get(std::move(_result->Get()));
   }
 
  private:
-  UniqueCorePtr<V, E> _result;
+  UniqueCorePtr<V, T> _result;
 };
 
 template <typename Handle>
@@ -197,13 +197,13 @@ class MultiAwaitAwaiter final : public Event {
   }
 };
 
-template <bool Shared, typename V, typename E>
+template <bool Shared, typename V, typename T>
 class AwaitSingleAwaiter;
 
-template <typename V, typename E>
-class [[nodiscard]] AwaitSingleAwaiter<false, V, E> final {
+template <typename V, typename T>
+class [[nodiscard]] AwaitSingleAwaiter<false, V, T> final {
  public:
-  explicit AwaitSingleAwaiter(UniqueCorePtr<V, E>&& result) noexcept : _result{std::move(result)} {
+  explicit AwaitSingleAwaiter(UniqueCorePtr<V, T>&& result) noexcept : _result{std::move(result)} {
     YACLIB_ASSERT(_result != nullptr);
   }
 
@@ -217,18 +217,18 @@ class [[nodiscard]] AwaitSingleAwaiter<false, V, E> final {
   }
 
   auto await_resume() {
-    return std::move(_result->Get()).Ok();
+    return T::Get(std::move(_result->Get()));
   }
 
  private:
-  UniqueCorePtr<V, E> _result;
+  UniqueCorePtr<V, T> _result;
 };
 
 // TODO(ocelaiwo): different overloads for lvalue and rvalue
-template <typename V, typename E>
-class [[nodiscard]] AwaitSingleAwaiter<true, V, E> final {
+template <typename V, typename T>
+class [[nodiscard]] AwaitSingleAwaiter<true, V, T> final {
  public:
-  explicit AwaitSingleAwaiter(SharedCorePtr<V, E> result) noexcept : _result{std::move(result)} {
+  explicit AwaitSingleAwaiter(SharedCorePtr<V, T> result) noexcept : _result{std::move(result)} {
     YACLIB_ASSERT(_result != nullptr);
   }
 
@@ -242,11 +242,11 @@ class [[nodiscard]] AwaitSingleAwaiter<true, V, E> final {
   }
 
   auto await_resume() const {
-    return std::as_const(_result->Get()).Ok();
+    return T::Get(std::as_const(_result->Get()));
   }
 
  private:
-  SharedCorePtr<V, E> _result;
+  SharedCorePtr<V, T> _result;
 };
 
 }  // namespace yaclib::detail
