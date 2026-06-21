@@ -52,11 +52,36 @@ find_package(Threads REQUIRED)
 target_link_libraries(yaclib PUBLIC Threads::Threads)
 
 target_include_directories(yaclib
-  PUBLIC ${YACLIB_SOURCE_DIR}/include
-  PUBLIC ${YACLIB_BINARY_DIR}/include # for config.hpp
+  PUBLIC $<BUILD_INTERFACE:${YACLIB_SOURCE_DIR}/include>
+  PUBLIC $<BUILD_INTERFACE:${YACLIB_BINARY_DIR}/include>
+  PUBLIC $<INSTALL_INTERFACE:include>
   PRIVATE ${YACLIB_SOURCE_DIR}/src
   )
 
 if (YACLIB_INSTALL)
-  install(TARGETS yaclib)
+  install(TARGETS yaclib
+          EXPORT yaclibTargets
+          ARCHIVE DESTINATION lib
+          LIBRARY DESTINATION lib
+          RUNTIME DESTINATION bin)
+
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+      "${YACLIB_BINARY_DIR}/yaclibConfigVersion.cmake"
+      VERSION 1.0.0
+      COMPATIBILITY AnyNewerVersion
+  )
+  configure_package_config_file(
+      "${YACLIB_SOURCE_DIR}/yaclibConfig.cmake.in"
+      "${YACLIB_BINARY_DIR}/yaclibConfig.cmake"
+      INSTALL_DESTINATION lib/cmake/yaclib
+  )
+  install(EXPORT yaclibTargets
+          FILE yaclibTargets.cmake
+          NAMESPACE yaclib::
+          DESTINATION lib/cmake/yaclib)
+  install(FILES
+          "${YACLIB_BINARY_DIR}/yaclibConfig.cmake"
+          "${YACLIB_BINARY_DIR}/yaclibConfigVersion.cmake"
+          DESTINATION lib/cmake/yaclib)
 endif ()
