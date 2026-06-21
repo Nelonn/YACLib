@@ -28,6 +28,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_MODULE_PATH "${YACLIB_SOURCE_DIR}/cmake")
 include(yaclib_flags)
 
+add_subdirectory(src) # Create static library
+
 if (YACLIB_INSTALL)
   include(GNUInstallDirs)
   install(DIRECTORY ${YACLIB_SOURCE_DIR}/include/yaclib TYPE INCLUDE)
@@ -55,8 +57,6 @@ if (YACLIB_INSTALL)
           "${CMAKE_CURRENT_BINARY_DIR}/yaclibConfigVersion.cmake"
           DESTINATION lib/cmake/yaclib)
 endif()
-
-add_subdirectory(src) # Create static library
 
 if (YACLIB_TEST)
   enable_testing()
