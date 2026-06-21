@@ -36,7 +36,7 @@ configure_file(config.hpp.in ${YACLIB_BINARY_DIR}/include/yaclib/config.hpp)
 add_library(yaclib STATIC)
 
 target_sources(yaclib
-  PUBLIC ${YACLIB_INCLUDES}
+  PRIVATE ${YACLIB_INCLUDES}
   PRIVATE ${YACLIB_HEADERS}
   PRIVATE ${YACLIB_SOURCES}
   )
