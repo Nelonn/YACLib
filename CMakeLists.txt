@@ -30,34 +30,6 @@ include(yaclib_flags)
 
 add_subdirectory(src) # Create static library
 
-if (YACLIB_INSTALL)
-  include(GNUInstallDirs)
-  install(DIRECTORY ${YACLIB_SOURCE_DIR}/include/yaclib TYPE INCLUDE)
-  install(DIRECTORY ${YACLIB_SOURCE_DIR}/include/yaclib_std TYPE INCLUDE)
-  install(DIRECTORY ${YACLIB_SOURCE_DIR}/include/yaclib_ext TYPE INCLUDE)
-  install(DIRECTORY ${YACLIB_BINARY_DIR}/include/yaclib TYPE INCLUDE)
-  
-  include(CMakePackageConfigHelpers)
-  write_basic_package_version_file(
-      "${CMAKE_CURRENT_BINARY_DIR}/yaclibConfigVersion.cmake"
-      VERSION 1.0.0
-      COMPATIBILITY AnyNewerVersion
-  )
-  configure_package_config_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/yaclibConfig.cmake.in"
-      "${CMAKE_CURRENT_BINARY_DIR}/yaclibConfig.cmake"
-      INSTALL_DESTINATION lib/cmake/yaclib
-  )
-  install(EXPORT yaclibTargets
-          FILE yaclibTargets.cmake
-          NAMESPACE yaclib::
-          DESTINATION lib/cmake/yaclib)
-  install(FILES
-          "${CMAKE_CURRENT_BINARY_DIR}/yaclibConfig.cmake"
-          "${CMAKE_CURRENT_BINARY_DIR}/yaclibConfigVersion.cmake"
-          DESTINATION lib/cmake/yaclib)
-endif()
-
 if (YACLIB_TEST)
   enable_testing()
   add_subdirectory(test)
